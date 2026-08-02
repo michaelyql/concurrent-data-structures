@@ -91,14 +91,13 @@ private:
 };
 
 int main(int argc, char* argv[]) {
-    if (argc != 5) {
-        cout << "usage: ./mpmc-queue <num_producer> <num_consumer> <num_message> <capacity>" << endl;
+    if (argc != 4) {
+        cout << "usage: ./mpmc-queue <num_threads> <num_message> <capacity>" << endl;
         return 1;
     }
-    const size_t NUM_PRODUCER = strtoul(argv[1], nullptr, 10);
-    const size_t NUM_CONSUMER = strtoul(argv[2], nullptr, 10);
-    const size_t NUM_MESSAGES = strtoul(argv[3], nullptr, 10);
-    const size_t CAPACITY = strtoul(argv[4], nullptr, 10);
+    const size_t NUM_THREADS = strtoul(argv[1], nullptr, 10);
+    const size_t NUM_MESSAGES = strtoul(argv[2], nullptr, 10);
+    const size_t CAPACITY = strtoul(argv[3], nullptr, 10);
     mpmc_queue<int> q {CAPACITY};
 
     vector<thread> producers, consumers;
@@ -106,7 +105,7 @@ int main(int argc, char* argv[]) {
 
     auto start = chrono::high_resolution_clock::now();
 
-    for (size_t i = 0; i < NUM_PRODUCER; i++) {
+    for (size_t i = 0; i < NUM_THREADS; i++) {
         producers.push_back(thread([&] {
             for (size_t j = 0; j < NUM_MESSAGES; j++) {
                 q.enqueue(j);
@@ -114,7 +113,7 @@ int main(int argc, char* argv[]) {
             }
         }));
     }
-    for (size_t i = 0; i < NUM_CONSUMER; i++) {
+    for (size_t i = 0; i < NUM_THREADS; i++) {
         consumers.push_back(thread([&]{
             for (size_t j = 0; j < NUM_MESSAGES; j++) {
                 auto p = q.dequeue();
@@ -129,8 +128,7 @@ int main(int argc, char* argv[]) {
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 
-    cout << "producers: " << NUM_PRODUCER << "\n"
-         << "consumers: " << NUM_CONSUMER << "\n"
+    cout << "threads: " << NUM_THREADS << "\n"
          << "enqueued: " << enqueue_cnt << "\n"
          << "dequeued: " << dequeue_cnt << endl;
     cout << "Took: " << duration << "ms" << endl;
